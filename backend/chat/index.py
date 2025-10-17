@@ -87,16 +87,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         snippets = [m.strip() for m in matches[:5] if len(m.strip()) > 20]
         
         if snippets:
-            answer_text = '\n\n'.join(snippets[:3])
-            ai_response = (
-                f'{answer_text}\n\n'
-                f'Подробнее: {search_url}'
-            ) if language == 'ru' else (
-                f'{answer_text}\n\n'
-                f'More info: {search_url}'
-            )
+            answer_text = snippets[0]
+            ai_response = f'{answer_text}\n\n{search_url}'
         else:
-            ai_response = search_url if language == 'ru' else search_url
+            ai_response = search_url
     except Exception as search_error:
         ai_response = search_url
     

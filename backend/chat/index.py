@@ -65,8 +65,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         from openai import OpenAI
+        import httpx
         
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(
+            api_key=api_key,
+            http_client=httpx.Client()
+        )
         
         system_message = (
             'Ты профессиональный корпоративный AI-ассистент. '

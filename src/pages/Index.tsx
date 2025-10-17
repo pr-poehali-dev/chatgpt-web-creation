@@ -161,6 +161,7 @@ export default function Index() {
     if (!inputValue.trim()) return;
 
     const userMessage: Message = { role: 'user', content: inputValue };
+    const currentInput = inputValue;
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
 
@@ -174,29 +175,42 @@ export default function Index() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: inputValue,
+          message: currentInput,
           language: language
         })
       });
 
       const data = await response.json();
       
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: 'assistant',
-          content: data.response || 'Произошла ошибка. Пожалуйста, попробуйте снова.'
-        };
-        return newMessages;
-      });
+      if (data.error) {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = {
+            role: 'assistant',
+            content: language === 'ru' 
+              ? 'Для работы AI необходимо добавить API ключ OpenAI в настройки проекта. Перейдите в раздел "Секреты" и добавьте OPENAI_API_KEY.' 
+              : 'To enable AI, please add OpenAI API key in project settings. Go to "Secrets" section and add OPENAI_API_KEY.'
+          };
+          return newMessages;
+        });
+      } else {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = {
+            role: 'assistant',
+            content: data.response || 'Произошла ошибка. Пожалуйста, попробуйте снова.'
+          };
+          return newMessages;
+        });
+      }
     } catch (error) {
       setMessages(prev => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
           role: 'assistant',
           content: language === 'ru' 
-            ? 'Произошла ошибка при обращении к AI. Пожалуйста, убедитесь, что API ключ настроен.' 
-            : 'Error connecting to AI. Please ensure the API key is configured.'
+            ? 'Произошла ошибка при обращении к AI. Проверьте настройки API ключа.' 
+            : 'Error connecting to AI. Please check API key settings.'
         };
         return newMessages;
       });

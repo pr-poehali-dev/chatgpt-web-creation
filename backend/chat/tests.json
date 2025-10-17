@@ -10,12 +10,12 @@
       }
     },
     {
-      "name": "POST with valid message",
+      "name": "POST with valid search query",
       "method": "POST",
       "path": "/",
       "body": {
-        "message": "Hello, AI!",
-        "language": "en"
+        "message": "погода в Москве",
+        "language": "ru"
       },
       "expectedStatus": 200,
       "expectedBody": {

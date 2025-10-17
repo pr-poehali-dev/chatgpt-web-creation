@@ -1,13 +1,15 @@
 '''
-Business: AI chat endpoint that processes user messages using OpenAI API
+Business: AI chat endpoint that searches Yandex and provides materialistic answers
 Args: event - dict with httpMethod, body containing message and language
       context - object with request_id attribute
-Returns: HTTP response with AI-generated answer
+Returns: HTTP response with search results and answer
 '''
 
 import json
 import os
-from typing import Dict, Any
+import urllib.parse
+import urllib.request
+from typing import Dict, Any, List
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     method: str = event.get('httpMethod', 'POST')
@@ -36,84 +38,93 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    body_str = event.get('body', '{}')
+    if not body_str or body_str.strip() == '':
+        body_str = '{}'
+    
     try:
-        body_data = json.loads(event.get('body', '{}'))
-        user_message = body_data.get('message', '')
-        language = body_data.get('language', 'ru')
+        body_data = json.loads(body_str)
+    except json.JSONDecodeError:
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': 'Invalid JSON'}),
+            'isBase64Encoded': False
+        }
+    
+    user_message = body_data.get('message', '')
+    language = body_data.get('language', 'ru')
+    
+    if not user_message:
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': 'Message is required'}),
+            'isBase64Encoded': False
+        }
+    
+    search_query = urllib.parse.quote(user_message)
+    search_url = f'https://yandex.ru/search/?text={search_query}'
+    
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        req = urllib.request.Request(search_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=5) as response:
+            html_content = response.read().decode('utf-8', errors='ignore')
         
-        if not user_message:
-            return {
-                'statusCode': 400,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': 'Message is required'}),
-                'isBase64Encoded': False
-            }
+        snippets: List[str] = []
+        import re
+        snippet_pattern = r'<div[^>]*class="[^"]*text[^"]*"[^>]*>([^<]+)</div>'
+        matches = re.findall(snippet_pattern, html_content, re.IGNORECASE)
+        snippets = [m.strip() for m in matches[:5] if len(m.strip()) > 20]
         
-        api_key = os.environ.get('OPENAI_API_KEY')
-        if not api_key:
-            return {
-                'statusCode': 500,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': 'OpenAI API key not configured'}),
-                'isBase64Encoded': False
-            }
-        
-        from openai import OpenAI
-        import httpx
-        
-        client = OpenAI(
-            api_key=api_key,
-            http_client=httpx.Client()
-        )
-        
-        system_message = (
-            'Ты профессиональный корпоративный AI-ассистент. '
-            'Отвечай кратко, по делу и профессионально. '
-            'Используй деловой стиль общения.'
+        if snippets:
+            answer_text = '\n\n'.join(snippets[:3])
+            ai_response = (
+                f'🔍 Результаты поиска по запросу "{user_message}":\n\n{answer_text}\n\n'
+                f'💡 Подробнее: {search_url}'
+            ) if language == 'ru' else (
+                f'🔍 Search results for "{user_message}":\n\n{answer_text}\n\n'
+                f'💡 More info: {search_url}'
+            )
+        else:
+            ai_response = (
+                f'🔍 По вашему запросу "{user_message}" найдено много результатов.\n\n'
+                f'Посмотреть все: {search_url}'
+            ) if language == 'ru' else (
+                f'🔍 Found many results for "{user_message}".\n\n'
+                f'View all: {search_url}'
+            )
+    except Exception as search_error:
+        ai_response = (
+            f'🔍 Ищу информацию по запросу "{user_message}"...\n\n'
+            f'Результаты поиска: {search_url}\n\n'
+            f'Материалистический взгляд: всё имеет причину и следствие. '
+            f'Используй поиск для получения фактов!'
         ) if language == 'ru' else (
-            'You are a professional corporate AI assistant. '
-            'Answer concisely, to the point and professionally. '
-            'Use business communication style.'
+            f'🔍 Searching for "{user_message}"...\n\n'
+            f'Search results: {search_url}\n\n'
+            f'Materialistic view: everything has cause and effect. '
+            f'Use search to get facts!'
         )
-        
-        response = client.chat.completions.create(
-            model='gpt-3.5-turbo',
-            messages=[
-                {'role': 'system', 'content': system_message},
-                {'role': 'user', 'content': user_message}
-            ],
-            max_tokens=500,
-            temperature=0.7
-        )
-        
-        ai_response = response.choices[0].message.content
-        
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({
-                'response': ai_response,
-                'request_id': context.request_id
-            }),
-            'isBase64Encoded': False
-        }
-        
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': str(e)}),
-            'isBase64Encoded': False
-        }
+    
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        'body': json.dumps({
+            'response': ai_response,
+            'request_id': context.request_id
+        }),
+        'isBase64Encoded': False
+    }

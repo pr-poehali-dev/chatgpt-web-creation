@@ -98,17 +98,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         else:
             ai_response = search_url if language == 'ru' else search_url
     except Exception as search_error:
-        ai_response = (
-            f'🔍 Ищу информацию по запросу "{user_message}"...\n\n'
-            f'Результаты поиска: {search_url}\n\n'
-            f'Материалистический взгляд: всё имеет причину и следствие. '
-            f'Используй поиск для получения фактов!'
-        ) if language == 'ru' else (
-            f'🔍 Searching for "{user_message}"...\n\n'
-            f'Search results: {search_url}\n\n'
-            f'Materialistic view: everything has cause and effect. '
-            f'Use search to get facts!'
-        )
+        ai_response = search_url
     
     return {
         'statusCode': 200,

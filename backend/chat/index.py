@@ -96,13 +96,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 f'More info: {search_url}'
             )
         else:
-            ai_response = (
-                f'По вашему запросу "{user_message}" найдено много результатов.\n\n'
-                f'Посмотреть все: {search_url}'
-            ) if language == 'ru' else (
-                f'Found many results for "{user_message}".\n\n'
-                f'View all: {search_url}'
-            )
+            ai_response = search_url if language == 'ru' else search_url
     except Exception as search_error:
         ai_response = (
             f'🔍 Ищу информацию по запросу "{user_message}"...\n\n'

@@ -352,64 +352,62 @@ export default function Index() {
       </main>
 
       {showChat && (
-        <div className="fixed bottom-6 right-6 w-96 h-[600px] shadow-2xl rounded-lg overflow-hidden animate-scale-in z-50">
-          <Card className="h-full flex flex-col">
-            <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Icon name="Bot" size={24} />
-                <h3 className="font-semibold">{t.chat.title}</h3>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowChat(false)}
-                className="text-primary-foreground hover:bg-primary-foreground/20"
-              >
-                <Icon name="X" size={20} />
+        <div className="fixed inset-0 bg-background z-50 flex flex-col animate-scale-in">
+          <div className="bg-primary text-primary-foreground p-6 flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-3">
+              <Icon name="Bot" size={32} />
+              <h3 className="text-2xl font-bold">{t.chat.title}</h3>
+            </div>
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={() => setShowChat(false)}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+            >
+              <Icon name="X" size={24} />
+            </Button>
+          </div>
+
+          <ScrollArea className="flex-1 p-8">
+            <div className="max-w-4xl mx-auto space-y-6">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[70%] p-4 rounded-2xl shadow-sm ${
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground'
+                    }`}
+                  >
+                    <p className="text-base leading-relaxed">{message.content}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+
+          <div className="p-6 border-t bg-background/95 backdrop-blur">
+            <div className="max-w-4xl mx-auto flex gap-3">
+              <Input
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder={t.chat.placeholder}
+                className="flex-1 h-12 text-base"
+              />
+              <Button onClick={handleSendMessage} size="lg" className="px-8">
+                <Icon name="Send" size={20} />
               </Button>
             </div>
-
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[80%] p-3 rounded-lg ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground'
-                      }`}
-                    >
-                      {message.content}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-
-            <div className="p-4 border-t">
-              <div className="flex gap-2">
-                <Input
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder={t.chat.placeholder}
-                  className="flex-1"
-                />
-                <Button onClick={handleSendMessage}>
-                  <Icon name="Send" size={18} />
-                </Button>
-              </div>
-            </div>
-          </Card>
+          </div>
         </div>
       )}
 

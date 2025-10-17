@@ -89,18 +89,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if snippets:
             answer_text = '\n\n'.join(snippets[:3])
             ai_response = (
-                f'🔍 Результаты поиска по запросу "{user_message}":\n\n{answer_text}\n\n'
-                f'💡 Подробнее: {search_url}'
+                f'{answer_text}\n\n'
+                f'Подробнее: {search_url}'
             ) if language == 'ru' else (
-                f'🔍 Search results for "{user_message}":\n\n{answer_text}\n\n'
-                f'💡 More info: {search_url}'
+                f'{answer_text}\n\n'
+                f'More info: {search_url}'
             )
         else:
             ai_response = (
-                f'🔍 По вашему запросу "{user_message}" найдено много результатов.\n\n'
+                f'По вашему запросу "{user_message}" найдено много результатов.\n\n'
                 f'Посмотреть все: {search_url}'
             ) if language == 'ru' else (
-                f'🔍 Found many results for "{user_message}".\n\n'
+                f'Found many results for "{user_message}".\n\n'
                 f'View all: {search_url}'
             )
     except Exception as search_error:

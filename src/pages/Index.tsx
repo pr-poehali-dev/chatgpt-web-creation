@@ -157,31 +157,50 @@ export default function Index() {
 
   const t = translations[language];
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
     const userMessage: Message = { role: 'user', content: inputValue };
     setMessages(prev => [...prev, userMessage]);
-
-    setTimeout(() => {
-      const responses = language === 'ru' 
-        ? [
-            'Спасибо за ваш вопрос. Я обработал запрос и готов предоставить детальную информацию.',
-            'Отличный вопрос! На основе анализа данных могу предложить следующее решение.',
-            'Я понял ваш запрос. Позвольте предоставить вам профессиональную консультацию по этому вопросу.'
-          ]
-        : [
-            'Thank you for your question. I have processed your request and ready to provide detailed information.',
-            'Excellent question! Based on data analysis, I can suggest the following solution.',
-            'I understand your request. Let me provide you with professional consultation on this matter.'
-          ];
-      
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      const aiMessage: Message = { role: 'assistant', content: randomResponse };
-      setMessages(prev => [...prev, aiMessage]);
-    }, 1000);
-
     setInputValue('');
+
+    const thinkingMessage: Message = { role: 'assistant', content: '...' };
+    setMessages(prev => [...prev, thinkingMessage]);
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/e66d0768-3a94-43d6-a840-7a739e7033ad', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: inputValue,
+          language: language
+        })
+      });
+
+      const data = await response.json();
+      
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: 'assistant',
+          content: data.response || 'Произошла ошибка. Пожалуйста, попробуйте снова.'
+        };
+        return newMessages;
+      });
+    } catch (error) {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: 'assistant',
+          content: language === 'ru' 
+            ? 'Произошла ошибка при обращении к AI. Пожалуйста, убедитесь, что API ключ настроен.' 
+            : 'Error connecting to AI. Please ensure the API key is configured.'
+        };
+        return newMessages;
+      });
+    }
   };
 
   const toggleLanguage = () => {
@@ -362,7 +381,12 @@ export default function Index() {
                 <Input
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
                   placeholder={t.chat.placeholder}
                   className="flex-1"
                 />

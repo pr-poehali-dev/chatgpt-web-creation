@@ -370,22 +370,49 @@ export default function Index() {
 
           <ScrollArea className="flex-1 p-8">
             <div className="max-w-4xl mx-auto space-y-6">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+              {messages.map((message, index) => {
+                const renderContent = (content: string) => {
+                  const urlRegex = /(https?:\/\/[^\s]+)/g;
+                  const parts = content.split(urlRegex);
+                  
+                  return parts.map((part, i) => {
+                    if (part.match(urlRegex)) {
+                      return (
+                        <a
+                          key={i}
+                          href={part}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:text-blue-600 underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {part.replace('https://', '').replace('http://', '').split('?')[0]}
+                        </a>
+                      );
+                    }
+                    return <span key={i}>{part}</span>;
+                  });
+                };
+
+                return (
                   <div
-                    className={`max-w-[70%] p-4 rounded-2xl shadow-sm ${
-                      message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-foreground'
-                    }`}
+                    key={index}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <p className="text-base leading-relaxed">{message.content}</p>
+                    <div
+                      className={`max-w-[70%] p-4 rounded-2xl shadow-sm ${
+                        message.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-foreground'
+                      }`}
+                    >
+                      <p className="text-base leading-relaxed whitespace-pre-wrap">
+                        {renderContent(message.content)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
 
